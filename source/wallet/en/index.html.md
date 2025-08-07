@@ -559,7 +559,7 @@ Gets a wallet address. To use this API, `Wallet` permission is required.
 
 ```json
 {
-  "withdraw_id": "<withdrawal ID>"
+  "withdrawId": "<withdrawal ID>"
 }
 ```
 
@@ -581,7 +581,7 @@ Performs a wallet withdrawal. To use this API, `Withdraw` permission is required
 
 | Name        | Type   | Required | Description                                                                                                                                                                                                     |
 | ---         | ---    | ---      | ---                                                                                                                                                                                                             |
-| withdraw_id | String | Yes      | Internal withdrawal ID. References the `orderID` field in `wallet_history` API. As withdrawal will not be processed immediately. User can query the wallet history API to check on the status of the withdrawal |
+| withdrawId | String | Yes      | Internal withdrawal ID. References the `orderID` field in `wallet_history` API. As withdrawal will not be processed immediately. User can query the wallet history API to check on the status of the withdrawal |
 
 
 ## Query available currency list for wallet action

@@ -555,7 +555,7 @@ BTSE 的速率限制如下：
 
 ```json
 {
-  "withdraw_id": "<withdrawal ID>"
+  "withdrawId": "<withdrawal ID>"
 }
 ```
 
@@ -577,7 +577,7 @@ BTSE 的速率限制如下：
 
 | 名称        | 类型   | 必填     | 描述                                                                                                                                                                                                        |
 | ---         | ---    | ---     | ---                                                                                                                                                                                                        |
-| withdraw_id | String | Yes     | 内部提款ID。参考`wallet_history` API中的`orderID`字段。由于提现不会立即处理。用户可以查询钱包历史API来检查提现的状态                                                                                           |
+| withdrawId | String | Yes     | 内部提款ID。参考`wallet_history` API中的`orderID`字段。由于提现不会立即处理。用户可以查询钱包历史API来检查提现的状态                                                                                           |
 
 
 ## 查询钱包操作的可用货币列表
