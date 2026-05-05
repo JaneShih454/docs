@@ -13,6 +13,13 @@ headingLevel: 2
 
 # 更新日志
 
+## Version 1.0.2（2026年5月5日，这些更改将于 2026 年 XX 月 XX 日生效）
+
+* 更新 `订单簿最佳买卖价快照（BBO Snapshot）` (#470de25952) 的描述。
+  * 移除 snapshotL1` topic 中的 grouping 逻辑。BBO 快照不支持价格层级分组；先前文档中的相关描述有误。
+  * 新增 `Topic` 格式说明。订阅 topic 格式为 `snapshotL1:<symbol>`（例如 `snapshotL1:BTC-PERP`）。
+  * 在 `订单簿错误响应` (#6796fd1409) 中新增错误代码 `1009`，用于提示 `snapshotL1` topic 不支持 grouping。仍使用 grouping 后缀的客户端（例如 `snapshotL1:BTC-PERP_0`）将收到此错误。
+
 ## Version 1.0.1（2025年12月2日，这些更改将于 2026 年 1 月 11 日生效）
 
 * 更新 [市场摘要](#7335b2436c) 中以下响应字段的描述：
@@ -2895,7 +2902,7 @@ BTSE 的速率限制如下：
   * 测试网络
     * `wss://testws.btse.io/ws/oss/futures`
 
-## OSS L1 快照 (按分组)
+## 订单簿最佳买卖价快照（BBO Snapshot）
 
 > 请求
 
@@ -2903,14 +2910,16 @@ BTSE 的速率限制如下：
 {
   "op": "subscribe",
   "args": [
-    "snapshotL1:BTC-PERP_0"
+    "snapshotL1:BTC-PERP"
   ]
 }
+```
 
+```json
 {
   "op": "unsubscribe",
   "args": [
-    "snapshotL1:BTC-PERP_0"
+    "snapshotL1:BTC-PERP"
   ]
 }
 ```
@@ -2919,50 +2928,54 @@ BTSE 的速率限制如下：
 
 ```json
 {
-  "topic": "snapshotL1:BTC-PERP_0",
+  "topic": "snapshotL1:BTC-PERP",
   "data": {
     "bids": [
       [
-          "28064.9",
-          "1268"
+        "122160.1",
+        "69350"
       ]
     ],
     "asks": [
       [
-          "28065.0",
-          "1015"
+        "122133.3",
+        "1000"
       ]
     ],
     "type": "snapshotL1",
-    "symbol": "BTC-PERP",
-    "timestamp": 1680751558529
+    "timestamp": 1565135165600,
+    "symbol": "BTC-PERP"
   }
 }
 ```
 
-通过端点`wss://ws.btse.com/ws/oss/futures`订阅Level 1订单簿。订阅的格式将为`symbol_grouping`。
+通过 `snapshotL1` 主题订阅订单簿最佳买卖价（Best Bid / Best Ask, BBO）快照。Topic 格式为 `snapshotL1:symbol`（例如 `snapshotL1:BTC-PERP`）。
 
-* `symbol`表示市场符号
-* `grouping`表示分组的粒度。有效值为0-8。
+每条消息都是当前最佳买卖价的完整快照。`bids` 与 `asks` 各只包含一组 `[价格, 数量]` tuple，代表盘口最佳价位，`type` 字段固定为 `snapshotL1`。
+
+`bids` 与 `asks` 的价格与数量均以字符串类型传送，以避免浮点精度损失；客户端应使用高精度类型（例如 `BigDecimal`、`decimal.js`）解析后再进行运算。
+
+由于每条推送都是完整快照，客户端只需在收到消息时覆盖本地状态即可，无序号（sequence number）需跟踪，也不需执行增量合并逻辑。若连接中断，重新订阅该主题即可恢复接收。
 
 ### 响应内容
 
 #### 订单簿对象
 
-| 名称   | 类型        | 是否必须 | 描述                    |
-| ---    | ---         | ---      | ---                     |
-| topic  | String      | Yes      | Websocket主题           |
-| data   | 数据对象    | Yes      | 参见下面的数据对象      |
+| 字段  | 类型      | 必填 | 说明                  |
+| ---   | ---       | ---  | ---                   |
+| topic | String    | 是   | WebSocket 主题        |
+| data  | 数据对象  | 是   | 详见下方数据对象      |
 
 #### 数据对象
 
-| 名称      | 类型        | 是否必须 | 描述                                                                                    |
-| ---       | ---         | ---      | ---                                                                                    |
-| bids      | 报价对象    | Yes      | 买入报价                                                                                |
-| asks      | 报价对象    | Yes      | 卖出报价                                                                                |
-| symbol    | String      | Yes      | 市场符号                                                                                |
-| type      | String      | Yes      | `snapshotL1` - L1数据指的是交易对订单簿的最佳买入/最佳卖出价。                                   |
-| timestamp | Long        | Yes      | 订单簿时间戳                                                                           |
+| 字段      | 类型      | 必填 | 说明                                              |
+| ---       | ---       | ---  | ---                                               |
+| bids      | 报价对象  | 是   | 最佳买入报价，格式为 `[价格, 数量]` tuple         |
+| asks      | 报价对象  | 是   | 最佳卖出报价，格式为 `[价格, 数量]` tuple         |
+| type      | String    | 是   | 固定为 `snapshotL1`                               |
+| timestamp | Long      | 是   | 快照生成时的时间戳（毫秒）                        |
+| symbol    | String    | 是   | 交易对代码                                        |
+
 
 ## 订单簿增量更新
 
@@ -3104,6 +3117,7 @@ BTSE 的速率限制如下：
 | 1005    | 提供的主题不存在。                                                                                   |
 | 1007    | 用户消息缓冲区已满。                                                                                 |
 | 1008    | 达到最大失败尝试，关闭会话。                                                                         |
+| 1009   | 一級數據不支援價格分組。請訂閱時不要加入分組後綴。  |
 
 
 # Websocket流
