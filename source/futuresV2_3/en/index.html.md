@@ -18,6 +18,7 @@ headingLevel: 2
 * Update the description in [`Orderbook Best Bid / Best Ask (BBO) Snapshot`](#orderbook-best-bid--best-ask-bbo-snapshot).
   * Remove the grouping logic from `snapshotL1` topic. The BBO snapshot does not support price-level grouping; the previous documentation incorrectly referenced it.
   * Add `Topic` format description. The subscription topic follows the pattern `snapshotL1:<symbol>`(e.g. `snapshotL1:BTC-PERP`)
+* Update the description in [`Orderbook Incremental Updates`](#orderbook-incremental-updates)
   * Add the error response `1009` in [`Orderbook Error Response`](#orderbook-error-response) to indicate that the `snapshotL1` topic does not support grouping. Clients still sending a grouping suffix (e.g. `snapshotL1:BTC-PERP_0`) will receive this error. 
 
 ## Version 1.0.1 (3rd December 2025, these changes will take effect on 11th January 2026.)
@@ -3084,13 +3085,17 @@ Because every push is a full snapshot, clients can simply overwrite the local co
 }
 ```
 
-Subscribe to Orderbook incremental updates through the endpoint `wss://ws.btse.com/ws/oss/futures`. The format of topic will be `update:symbol_grouping` (eg. `update:BTC-PERP_0`). The first response received will be a snapshot of the current orderbook (this is indicated in the `type` field) and 50 levels will be returned. Incremental updates will be sent in subsequent packets with type `delta`.
+Subscribe to Orderbook incremental updates through the `update` topic. The format of topic is `update:symbol_grouping` (eg. `update:BTC-PERP_0`).
+
+The `_grouping` suffix represents the granularity of price-level aggregation. Valid values are `0` to `8`. If the suffix is omitted (eg. `update:BTC-PERP`), `_0` is used by default. Different grouping values produce independent topic subscriptions and caches.
+
+The first response received will be a snapshot of the current orderbook (indicated by the `type` field) with up to 50 levels. Incremental updates will be sent in subsequent packets with type `delta`.
 
 Bids and asks will be sent in `price` and `size` tuples. The size sent will be the new updated size for the price. If a value of `0` is sent, the price should be removed from the local copy of the orderbook.
 
-To ensure that the updates are received in sequence, `seqNum` indicates the current sequence and `prevSeqNum` refers to the packet before. `seqNum` will always be one after the `prevSeqNum`. If the sequence is out of order, you will need to unsubscribe and re-subscribe to the topic again.
+To ensure that the updates are received in sequence, `seqNum` indicates the current sequence and `prevSeqNum` refers to the packet before. `seqNum` will always be one after the `prevSeqNum`. If the sequence is out of order, unsubscribe and re-subscribe to the topic again.
 
-Also if [crossed orderbook](https://en.wikipedia.org/wiki/Order_book#Crossed_book) ever occurs when the best bid higher or equal to the best ask, please unsubscribe and re-subscribe to the topic again.
+Also, if a [crossed orderbook](https://en.wikipedia.org/wiki/Order_book#Crossed_book) ever occurs (best bid is higher than or equal to best ask), unsubscribe and re-subscribe to the topic again.
 
 ### Response Content
 

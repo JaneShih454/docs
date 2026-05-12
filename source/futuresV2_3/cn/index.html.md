@@ -18,6 +18,7 @@ headingLevel: 2
 * 更新 `订单簿最佳买卖价快照（BBO Snapshot）` (#470de25952) 的描述。
   * 移除 snapshotL1` topic 中的 grouping 逻辑。BBO 快照不支持价格层级分组；先前文档中的相关描述有误。
   * 新增 `Topic` 格式说明。订阅 topic 格式为 `snapshotL1:<symbol>`（例如 `snapshotL1:BTC-PERP`）。
+* 更新 `订单簿增量更新` (#bb4b2c51b6) 的描述。
   * 在 `订单簿错误响应` (#6796fd1409) 中新增错误代码 `1009`，用于提示 `snapshotL1` topic 不支持 grouping。仍使用 grouping 后缀的客户端（例如 `snapshotL1:BTC-PERP_0`）将收到此错误。
 
 ## Version 1.0.1（2025年12月2日，这些更改将于 2026 年 1 月 11 日生效）
@@ -3078,13 +3079,17 @@ BTSE 的速率限制如下：
 }
 ```
 
-通过端点`wss://ws.btse.com/ws/oss/futures`订阅订单簿增量更新。主题的格式将为`update:symbol_grouping`（例如`update:BTC-PERP_0`）。首次收到的响应将是当前订单簿的快照（这在`type`字段中有标示），并将返回50个级别。随后的数据包中将发送增量更新，类型为`delta`。
+通过 `update` 主题订阅订单簿增量更新。Topic 格式为 `update:symbol_grouping`（例如 `update:BTC-PERP_0`）。
 
-买入和卖出将以`price`和`size`的元组形式发送。发送的大小将是价格的新更新大小。如果发送了一个`0`的值，则应从订单簿的本地副本中删除该价格。
+`_grouping` 后缀表示分组的粒度，有效值为 `0`–`8`。若省略该后缀（例如 `update:BTC-PERP`），将默认使用 `_0`。不同的 grouping 值对应独立的主题订阅与缓存。
 
-为确保按顺序接收到更新，`seqNum`指示当前序列，而`prevSeqNum`指前一个数据包。`seqNum`总是在`prevSeqNum`之后。如果序列是乱序的，您将需要取消订阅并再次订阅该主题。
+首次收到的消息为当前订单簿的完整快照（由 `type` 字段标识为 `snapshot`），最多返回 50 档；后续消息将以 `delta` 类型推送增量更新。
 
-如果当最佳买入价高于或等于最佳卖出价时发生[交叉订单簿](https://en.wikipedia.org/wiki/Order_book#Crossed_book)，请取消订阅并重新订阅该主题。
+`bids` 与 `asks` 均以 `[价格, 数量]` tuple 形式传送。`数量` 表示该价位在此次更新后的最新挂单量；若 `数量` 为 `0`，代表该价位已被移除，客户端应从本地订单簿中删除该价位。
+
+为确保更新有序，`seqNum` 代表当前序号，`prevSeqNum` 代表上一笔的序号；`seqNum` 必定为 `prevSeqNum + 1`。若发现序号不连续，应取消订阅并重新订阅该主题。
+
+此外，若出现 [crossed orderbook](https://en.wikipedia.org/wiki/Order_book#Crossed_book)（最佳买价 ≥ 最佳卖价）的情况，亦应取消订阅并重新订阅该主题。
 
 ### 响应内容
 
