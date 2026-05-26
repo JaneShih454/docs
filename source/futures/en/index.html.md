@@ -13,13 +13,13 @@ headingLevel: 2
 
 # Change Log
 
-## Version 2.7.11 (5th May 2026, these changes will take effect on 2026.)
+## Version 2.7.11 (27th May 2026, these changes will take effect on 1st July 2026.)
 
 * Update the description in [`Orderbook Best Bid / Best Ask (BBO) Snapshot`](#orderbook-best-bid--best-ask-bbo-snapshot).
   * Remove the grouping logic from `snapshotL1` topic. The BBO snapshot does not support price-level grouping; the previous documentation incorrectly referenced it.
   * Add `Topic` format description. The subscription topic follows the pattern `snapshotL1:<symbol>`(e.g. `snapshotL1:BTC-PERP`)
 * Update the description in [`Orderbook Incremental Updates`](#orderbook-incremental-updates)
-  * Add the error response `1009` in [`Orderbook Error Response`](#orderbook-error-response) to indicate that the `snapshotL1` topic does not support grouping. Clients still sending a grouping suffix (e.g. `snapshotL1:BTC-PERP_0`) will receive this error. 
+* Add the error response `1009` in [`Orderbook Error Response`](#orderbook-error-response) to indicate that the `snapshotL1` topic does not support grouping. Clients still sending a grouping suffix (e.g. `snapshotL1:BTC-PERP_0`) will receive this error. 
 
 ## Version 2.7.10 (3rd December 2025, these changes will take effect on 11th January 2026.)
 

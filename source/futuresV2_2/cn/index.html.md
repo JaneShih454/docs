@@ -13,13 +13,13 @@ headingLevel: 2
 
 # 更新日志
 
-## Version 1.0.9（2026年5月5日，这些更改将于 2026 年 XX 月 XX 日生效）
+## Version 1.0.9（2026年5月27日，这些更改将于 2026 年 7 月 1 日生效）
 
 * 更新 `订单簿最佳买卖价快照（BBO Snapshot）` (#470de25952) 的描述。
   * 移除 snapshotL1` topic 中的 grouping 逻辑。BBO 快照不支持价格层级分组；先前文档中的相关描述有误。
   * 新增 `Topic` 格式说明。订阅 topic 格式为 `snapshotL1:<symbol>`（例如 `snapshotL1:BTC-PERP`）。
 * 更新 `订单簿增量更新` (#bb4b2c51b6) 的描述。
-  * 在 `订单簿错误响应` (#6796fd1409) 中新增错误代码 `1009`，用于提示 `snapshotL1` topic 不支持 grouping。仍使用 grouping 后缀的客户端（例如 `snapshotL1:BTC-PERP_0`）将收到此错误。
+* 在 `订单簿错误响应` (#6796fd1409) 中新增错误代码 `1009`，用于提示 `snapshotL1` topic 不支持 grouping。仍使用 grouping 后缀的客户端（例如 `snapshotL1:BTC-PERP_0`）将收到此错误。
 
 ## Version 1.0.8（2025年12月2日，这些更改将于 2026 年 1 月 11 日生效）
 
