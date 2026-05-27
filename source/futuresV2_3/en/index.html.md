@@ -13,6 +13,14 @@ headingLevel: 2
 
 # Change Log
 
+## Version 1.0.2 (27th May 2026, these changes will take effect on 1st July 2026.)
+
+* Update the description in [`Orderbook Best Bid / Best Ask (BBO) Snapshot`](#orderbook-best-bid--best-ask-bbo-snapshot).
+  * Remove the grouping logic from `snapshotL1` topic. The BBO snapshot does not support price-level grouping; the previous documentation incorrectly referenced it.
+  * Add `Topic` format description. The subscription topic follows the pattern `snapshotL1:<symbol>`(e.g. `snapshotL1:BTC-PERP`)
+* Update the description in [`Orderbook Incremental Updates`](#orderbook-incremental-updates)
+* Add the error response `1009` in [`Orderbook Error Response`](#orderbook-error-response) to indicate that the `snapshotL1` topic does not support grouping. Clients still sending a grouping suffix (e.g. `snapshotL1:BTC-PERP_0`) will receive this error. 
+
 ## Version 1.0.1 (3rd December 2025, these changes will take effect on 11th January 2026.)
 
 * Update the description for the following response fields in [`Market Summary`](#market-summary):
@@ -2901,7 +2909,7 @@ Transfers funds between user and sub-account wallet. User can specify the source
   * Testnet
     * `wss://testws.btse.io/ws/oss/futures`
 
-## OSS L1 Snapshot (By grouping)
+## Orderbook Best Bid / Best Ask (BBO) Snapshot
 
 > Request
 
@@ -2909,14 +2917,16 @@ Transfers funds between user and sub-account wallet. User can specify the source
 {
   "op": "subscribe",
   "args": [
-    "snapshotL1:BTC-PERP_0"
+    "snapshotL1:BTC-PERP"
   ]
 }
+```
 
+```json
 {
   "op": "unsubscribe",
   "args": [
-    "snapshotL1:BTC-PERP_0"
+    "snapshotL1:BTC-PERP"
   ]
 }
 ```
@@ -2925,31 +2935,34 @@ Transfers funds between user and sub-account wallet. User can specify the source
 
 ```json
 {
-  "topic": "snapshotL1:BTC-PERP_0",
+  "topic": "snapshotL1:BTC-PERP",
   "data": {
     "bids": [
       [
-          "28064.9",
-          "1268"
+        "122160.1",
+        "69350"
       ]
     ],
     "asks": [
       [
-          "28065.0",
-          "1015"
+        "122133.3",
+        "1000"
       ]
     ],
     "type": "snapshotL1",
-    "symbol": "BTC-PERP",
-    "timestamp": 1680751558529
+    "timestamp": 1565135165600,
+    "symbol": "BTC-PERP"
   }
 }
 ```
 
-Subscribe to the Level 1 Orderbook through the endpoint `wss://ws.btse.com/ws/oss/futures`. The format to subscribe to will be `symbol_grouping`.
+Subscribe to Orderbook BBO snapshots through the `snapshotL1` topic. The format of topic will be `snapshotL1:symbol` (eg. `snapshotL1:BTC-PERP`).
 
-* `symbol` indicates the market symbol
-* `grouping` indicates the grouping granularity. Valid values are 0-8.
+Each message is a full snapshot of the current best bid / best ask. The `bids` and `asks` arrays each contain a single `[price, size]` tuple representing the top of book, and the `type` field is always `snapshotL1`.
+
+Bids and asks are sent in `price` and `size` tuples as strings to preserve precision; clients should parse them with a high-precision type (eg. `BigDecimal`, `decimal.js`) before performing arithmetic.
+
+Because every push is a full snapshot, clients can simply overwrite the local copy on each message — there is no sequence number, and no delta merging is required. If the connection drops, re-subscribe to the topic to resume receiving updates.
 
 ### Response Content
 
@@ -2962,13 +2975,14 @@ Subscribe to the Level 1 Orderbook through the endpoint `wss://ws.btse.com/ws/os
 
 #### Data Object
 
-| Name      | Type         | Required | Description         |
-| ---       | ---          | ---      | ---                 |
-| bids      | Quote Object | Yes      | Bid quotes          |
-| asks      | Quote Object | Yes      | Asks quotes         |
-| symbol    | String       | Yes      | Market symbol       |
-| type      | String       | Yes      | `snapshotL1` - L1 data refers to the best bid / best ask of a trading pair’s order book.   |
-| timestamp | Long         | Yes      | Orderbook timestamp |
+| Name      | Type         | Required | Description                                                  |
+| ---       | ---          | ---      | ---                                                          |
+| bids      | Quote Object | Yes      | Best bid quote as a `[price, size]` tuple                    |
+| asks      | Quote Object | Yes      | Best ask quote as a `[price, size]` tuple                    |
+| type      | String       | Yes      | Always `snapshotL1`                                          |
+| timestamp | Long         | Yes      | Timestamp of the snapshot                                    |
+| symbol    | String       | Yes      | Orderbook symbol                                             |
+
 
 ## Orderbook Incremental Updates
 
@@ -3071,13 +3085,17 @@ Subscribe to the Level 1 Orderbook through the endpoint `wss://ws.btse.com/ws/os
 }
 ```
 
-Subscribe to Orderbook incremental updates through the endpoint `wss://ws.btse.com/ws/oss/futures`. The format of topic will be `update:symbol_grouping` (eg. `update:BTC-PERP_0`). The first response received will be a snapshot of the current orderbook (this is indicated in the `type` field) and 50 levels will be returned. Incremental updates will be sent in subsequent packets with type `delta`.
+Subscribe to Orderbook incremental updates through the `update` topic. The format of topic is `update:symbol_grouping` (eg. `update:BTC-PERP_0`).
+
+The `_grouping` suffix represents the granularity of price-level aggregation. Valid values are `0` to `8`. If the suffix is omitted (eg. `update:BTC-PERP`), `_0` is used by default. Different grouping values produce independent topic subscriptions and caches.
+
+The first response received will be a snapshot of the current orderbook (indicated by the `type` field) with up to 50 levels. Incremental updates will be sent in subsequent packets with type `delta`.
 
 Bids and asks will be sent in `price` and `size` tuples. The size sent will be the new updated size for the price. If a value of `0` is sent, the price should be removed from the local copy of the orderbook.
 
-To ensure that the updates are received in sequence, `seqNum` indicates the current sequence and `prevSeqNum` refers to the packet before. `seqNum` will always be one after the `prevSeqNum`. If the sequence is out of order, you will need to unsubscribe and re-subscribe to the topic again.
+To ensure that the updates are received in sequence, `seqNum` indicates the current sequence and `prevSeqNum` refers to the packet before. `seqNum` will always be one after the `prevSeqNum`. If the sequence is out of order, unsubscribe and re-subscribe to the topic again.
 
-Also if [crossed orderbook](https://en.wikipedia.org/wiki/Order_book#Crossed_book) ever occurs when the best bid higher or equal to the best ask, please unsubscribe and re-subscribe to the topic again.
+Also, if a [crossed orderbook](https://en.wikipedia.org/wiki/Order_book#Crossed_book) ever occurs (best bid is higher than or equal to best ask), unsubscribe and re-subscribe to the topic again.
 
 ### Response Content
 
@@ -3110,6 +3128,7 @@ Also if [crossed orderbook](https://en.wikipedia.org/wiki/Order_book#Crossed_boo
 | 1005       | Topic provided does not exist.                                                         |
 | 1007       | User message buffer is full.                                                           |
 | 1008       | Reached maximum failed attempts, closing the session.                                  |
+| 1009       | Price grouping is not supported for Level 1 data. Please subscribe without grouping suffix.|
 
 
 # Websocket Streams
