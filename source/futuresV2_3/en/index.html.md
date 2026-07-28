@@ -36,7 +36,9 @@ headingLevel: 2
 
 ## Version 1.0.0 (10th July 2025)
 
-* Release V2.3 API. This change will take effect on 16th July, 2025.
+* Release V2.3 API. This change will take effect on 16th July, 2025. For more details, please refer to [`Overview`](#overview)
+* Add description for [`Ping/Pong`](#pingpong) mechanism.
+* Release `notificationApiV4` in [`Notifications`](#notifications)
 
 # Overview
 
@@ -3140,7 +3142,7 @@ Also, if a [crossed orderbook](https://en.wikipedia.org/wiki/Order_book#Crossed_
     * `wss://testws.btse.io/ws/futures`
 
 ## Ping/Pong
-For all our WebSocket servers, simply send a 'ping' message, and the WebSocket server will respond with a 'pong' message if the WebSocket connection is established and active.
+For connectivity checking, we will send a ping frame message every 3 minutes and you will need to respond pong frame message to us for checking, if the pong frame message doesn't correctly respond to us in 10 minutes, we will force to disconnect the connection.
 > Request
 
 ```
@@ -3356,7 +3358,7 @@ echo -n "/ws/futures1624985375123"  | openssl dgst -sha384 -hmac "848db84ac252b6
 
 ```
 
-To receive trade notifications, subscribe to the `notificationApiV3` or `notificationApiV4` topics. It is recommended to use `notificationApiV4`, which includes structured and clearly defined fields related to order size changes (e.g., original, filled, remaining). This ensures better consistency with recent API field updates. The WebSocket feed will push real-time, trade-level notifications to authenticated subscribers.
+To receive trade notifications, subscribe to the `notificationApiV4` topics, which includes structured and clearly defined fields related to order size changes (e.g., original, filled, remaining). This ensures better consistency with recent API field updates. The WebSocket feed will push real-time, trade-level notifications to authenticated subscribers.
 Please note, if the topic is subscribed to without proper authentication, no messages will be delivered.
 
 ### Response Content
