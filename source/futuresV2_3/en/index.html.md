@@ -36,7 +36,7 @@ headingLevel: 2
 
 ## Version 1.0.0 (10th July 2025)
 
-* Release V2.3 API. This change will take effect on 16th July, 2025.
+* Release V2.3 API. This change will take effect on 16th July, 2025. For more details, please refer to [`Overview`](#overview)
 * Add description for [`Ping/Pong`](#pingpong) mechanism.
 * Release `notificationApiV4` in [`Notifications`](#notifications)
 

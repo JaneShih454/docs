@@ -36,7 +36,7 @@ This change will take effect on September 24, 2025.
 
 ## Version 1.0.0 (10th July 2025)
 
-* Release V3.3 API. This change will take effect on 16th July, 2025.
+* Release V3.3 API. This change will take effect on 16th July, 2025. For more details, please refer to [`Overview`](#overview).
 
 # Overview
 
